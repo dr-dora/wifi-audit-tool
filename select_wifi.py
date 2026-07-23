@@ -3,12 +3,25 @@
 import csv
 import sys
 import re
+import os
 
 if len(sys.argv) < 2:
     print("Использование: python3 select_wifi.py scan-01.csv", file=sys.stderr)
     sys.exit(1)
 
 filename = sys.argv[1]
+
+def cleanup_csv():
+    """Удаляет CSV-файл сканирования при выходе пользователя."""
+    try:
+        os.remove(filename)
+        print(f"Файл {filename} удалён.", file=sys.stderr)
+    except FileNotFoundError:
+        pass
+    except PermissionError:
+        print(f"Не удалось удалить {filename}: недостаточно прав.", file=sys.stderr)
+    except OSError as error:
+        print(f"Не удалось удалить {filename}: {error}", file=sys.stderr)
 
 mac_regex = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
@@ -91,15 +104,17 @@ for i, net in enumerate(networks, start=1):
         file=sys.stderr
     )
 
+print("0. Выйти", file=sys.stderr)
 print("", file=sys.stderr)
 
 while True:
-    print("Выбери номер сети: ", end="", file=sys.stderr)
+    print("Выбери номер сети или 0 для выхода: ", end="", file=sys.stderr)
 
     try:
         choice = input().strip()
-    except KeyboardInterrupt:
-        print("\nОтменено пользователем.", file=sys.stderr)
+    except (KeyboardInterrupt, EOFError):
+        print("\nВыход из программы.", file=sys.stderr)
+        cleanup_csv()
         sys.exit(1)
 
     if not choice.isdigit():
@@ -107,6 +122,11 @@ while True:
         continue
 
     choice = int(choice)
+
+    if choice == 0:
+        print("Выход из программы.", file=sys.stderr)
+        cleanup_csv()
+        sys.exit(1)
 
     if 1 <= choice <= len(networks):
         selected = networks[choice - 1]
